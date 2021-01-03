@@ -1,6 +1,6 @@
 # m5stickc-ir-timer
 
-M5StickCで設定時刻に赤外線送信する
+M5StickCで設定時刻に赤外線信号を送信する
 
 ## Wi-FiのSSIDとパスフレーズ
 
