@@ -21,6 +21,12 @@ const char *NTP_SERVER = "ntp.nict.jp";
 const uint8_t AXP_WAS_PRESSED = 2;
 // ボタンが長押しされたと判定する時間(ms)
 const uint32_t BUTTON_PRESSED_MS = 500;
+// 最後にボタンを押してから画面を省電力にするまでの時間(ms)
+const unsigned long SCREEN_OFF_MS = 3000;
+// 通常時の画面輝度
+const uint8_t SCREEN_ON_BRIGHTNESS = 12;
+// 省電力時の画面輝度
+const uint8_t SCREEN_OFF_BRIGHTNESS = 8;
 
 // -----------------------------------------------------------------------------
 // 変数
@@ -35,6 +41,8 @@ int timer_hour = 7;
 int timer_min = 0;
 // 赤外線送信済みならtrue
 bool ir_sent = false;
+// 最後にボタンが押された時間
+unsigned long button_pressed_millis = 0;
 
 // -----------------------------------------------------------------------------
 // 関数
@@ -72,6 +80,17 @@ void connectWiFi(const char *ssid, const char *passphrase) {
     M5.Lcd.fillScreen(BLACK);
 }
 
+// 画面の輝度を上げる
+void screenOn() {
+    M5.Axp.ScreenBreath(SCREEN_ON_BRIGHTNESS);
+    button_pressed_millis = millis();
+}
+
+// 画面の輝度を下げる
+void screenOff() {
+    M5.Axp.ScreenBreath(SCREEN_OFF_BRIGHTNESS);
+}
+
 void setup() {
     M5.begin();
 
@@ -93,11 +112,15 @@ void loop() {
     if (M5.BtnA.wasPressed() || M5.BtnA.pressedFor(BUTTON_PRESSED_MS)) {
         timer_hour++;
         if (timer_hour > 23) timer_hour = 0;
+
+        screenOn();
     }
     // ボタンBが押されたらアラーム時刻の分を変更
     if (M5.BtnB.wasPressed() || M5.BtnB.pressedFor(BUTTON_PRESSED_MS)) {
         timer_min++;
         if (timer_min > 59) timer_min = 0;
+
+        screenOn();
     }
     // 電源ボタンが押されたらリセット
     if (M5.Axp.GetBtnPress() == AXP_WAS_PRESSED) {
@@ -107,6 +130,11 @@ void loop() {
     // 現在時刻を取得
     getLocalTime(&now);
     showCurrentTime();
+
+    // 最後にボタンを押してから時間が経過している場合は画面を省電力化
+    if ((millis() - button_pressed_millis) > SCREEN_OFF_MS) {
+        screenOff();
+    }
 
     if (now.tm_hour == timer_hour && now.tm_min == timer_min && now.tm_sec == 0) {
         // 赤外線送信していなければ電源ON信号を送信
