@@ -103,6 +103,8 @@ void setup() {
     connectWiFi(WIFI_SSID, WIFI_PASSPHRASE);
     // NTPの設定
     configTime(JST, 0, NTP_SERVER);
+
+    button_pressed_millis = millis();
 }
 
 void loop() {
